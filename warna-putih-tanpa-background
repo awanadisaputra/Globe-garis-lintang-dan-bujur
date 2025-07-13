@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>White Globe with Latitude Lines</title>
+    <style>
+      body {
+        margin: 0;
+        background: transparent;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js"></script>
+    <script>
+      // Setup
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        60,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+
+      // Renderer dengan background transparan
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+      });
+      renderer.setClearColor(0x000000, 0);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // Parameters
+      const radius = 5;
+      const segments = 36;
+      const rings = 8;
+      const points = [];
+
+      // Create points
+      const northPole = new THREE.Vector3(0, radius, 0);
+      const southPole = new THREE.Vector3(0, -radius, 0);
+      points.push(northPole);
+
+      for (let j = 1; j < rings; j++) {
+        const phi = (j / rings) * Math.PI;
+        for (let i = 0; i < segments; i++) {
+          const theta = (i / segments) * Math.PI * 2;
+          const x = radius * Math.sin(phi) * Math.cos(theta);
+          const y = radius * Math.cos(phi);
+          const z = radius * Math.sin(phi) * Math.sin(theta);
+          points.push(new THREE.Vector3(x, y, z));
+        }
+      }
+      points.push(southPole);
+
+      // Draw points (putih)
+      const geometryPoints = new THREE.BufferGeometry().setFromPoints(points);
+      const materialPoints = new THREE.PointsMaterial({
+        color: 0xffffff, // Warna putih
+        size: 0.05,
+      });
+      const pointCloud = new THREE.Points(geometryPoints, materialPoints);
+      scene.add(pointCloud);
+
+      // Draw RADIAL lines (meridian) - putih
+      const radialGeometry = new THREE.BufferGeometry();
+      const radialPositions = [];
+
+      for (let i = 0; i < segments; i++) {
+        const pointIndex = 1 + i;
+        radialPositions.push(
+          northPole.x,
+          northPole.y,
+          northPole.z,
+          points[pointIndex].x,
+          points[pointIndex].y,
+          points[pointIndex].z
+        );
+      }
+
+      for (let j = 0; j < rings - 2; j++) {
+        for (let i = 0; i < segments; i++) {
+          const currentIndex = 1 + j * segments + i;
+          const nextIndex = 1 + (j + 1) * segments + i;
+          radialPositions.push(
+            points[currentIndex].x,
+            points[currentIndex].y,
+            points[currentIndex].z,
+            points[nextIndex].x,
+            points[nextIndex].y,
+            points[nextIndex].z
+          );
+        }
+      }
+
+      const lastRingStart = 1 + (rings - 2) * segments;
+      for (let i = 0; i < segments; i++) {
+        const pointIndex = lastRingStart + i;
+        radialPositions.push(
+          points[pointIndex].x,
+          points[pointIndex].y,
+          points[pointIndex].z,
+          southPole.x,
+          southPole.y,
+          southPole.z
+        );
+      }
+
+      radialGeometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(radialPositions, 3)
+      );
+      const radialMaterial = new THREE.LineBasicMaterial({
+        color: 0xffffff, // Warna putih
+        transparent: true,
+        opacity: 0.7, // Sedikit lebih terang
+        linewidth: 1,
+      });
+      const radialLines = new THREE.LineSegments(
+        radialGeometry,
+        radialMaterial
+      );
+      scene.add(radialLines);
+
+      // Draw LATITUDE lines (lintang) - putih
+      const latitudeGeometry = new THREE.BufferGeometry();
+      const latitudePositions = [];
+
+      for (let j = 1; j < rings - 1; j++) {
+        const ringStart = 1 + (j - 1) * segments;
+        for (let i = 0; i < segments; i++) {
+          const currentIndex = ringStart + i;
+          const nextIndex = ringStart + ((i + 1) % segments);
+          latitudePositions.push(
+            points[currentIndex].x,
+            points[currentIndex].y,
+            points[currentIndex].z,
+            points[nextIndex].x,
+            points[nextIndex].y,
+            points[nextIndex].z
+          );
+        }
+      }
+
+      latitudeGeometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(latitudePositions, 3)
+      );
+      const latitudeMaterial = new THREE.LineBasicMaterial({
+        color: 0xffffff, // Warna putih
+        transparent: true,
+        opacity: 0.5,
+        linewidth: 1,
+      });
+      const latitudeLines = new THREE.LineSegments(
+        latitudeGeometry,
+        latitudeMaterial
+      );
+      scene.add(latitudeLines);
+
+      // Glow effect (ubah menjadi putih)
+      const glowGeometry = new THREE.SphereGeometry(radius * 1.02, 32, 32);
+      const glowMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffff, // Warna putih
+        transparent: true,
+        opacity: 0.05,
+        side: THREE.BackSide,
+      });
+      const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+      scene.add(glow);
+
+      // Camera
+      camera.position.z = 10;
+
+      // Animation
+      function animate() {
+        requestAnimationFrame(animate);
+        pointCloud.rotation.y += 0.002;
+        radialLines.rotation.y += 0.002;
+        latitudeLines.rotation.y += 0.002;
+        glow.rotation.y += 0.001;
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      // Resize
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    </script>
+  </body>
+</html>
