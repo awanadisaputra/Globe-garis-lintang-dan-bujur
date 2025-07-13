@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Globe with Latitude Lines</title>
+    <title>White Globe with Latitude Lines</title>
     <style>
       body {
         margin: 0;
-        background: #000;
+        background: transparent;
         overflow: hidden;
       }
       canvas {
@@ -26,22 +26,27 @@
         0.1,
         1000
       );
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
+
+      // Renderer dengan background transparan
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+      });
+      renderer.setClearColor(0x000000, 0);
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
       // Parameters
       const radius = 5;
-      const segments = 36; // Jumlah garis meridian (radial)
-      const rings = 8; // Jumlah garis lintang (termasuk kutub)
+      const segments = 36;
+      const rings = 8;
       const points = [];
 
-      // Create points - tambahkan titik kutub terlebih dahulu
+      // Create points
       const northPole = new THREE.Vector3(0, radius, 0);
       const southPole = new THREE.Vector3(0, -radius, 0);
       points.push(northPole);
 
-      // Titik-titik di antara kutub
       for (let j = 1; j < rings; j++) {
         const phi = (j / rings) * Math.PI;
         for (let i = 0; i < segments; i++) {
@@ -54,20 +59,19 @@
       }
       points.push(southPole);
 
-      // Draw points
+      // Draw points (putih)
       const geometryPoints = new THREE.BufferGeometry().setFromPoints(points);
       const materialPoints = new THREE.PointsMaterial({
-        color: 0xffffff,
+        color: 0xffffff, // Warna putih
         size: 0.05,
       });
       const pointCloud = new THREE.Points(geometryPoints, materialPoints);
       scene.add(pointCloud);
 
-      // Draw RADIAL lines (meridian) from north to south poles
+      // Draw RADIAL lines (meridian) - putih
       const radialGeometry = new THREE.BufferGeometry();
       const radialPositions = [];
 
-      // Garis dari kutub utara ke titik-titik di ring pertama
       for (let i = 0; i < segments; i++) {
         const pointIndex = 1 + i;
         radialPositions.push(
@@ -80,7 +84,6 @@
         );
       }
 
-      // Garis radial antara ring-ring
       for (let j = 0; j < rings - 2; j++) {
         for (let i = 0; i < segments; i++) {
           const currentIndex = 1 + j * segments + i;
@@ -96,7 +99,6 @@
         }
       }
 
-      // Garis dari ring terakhir ke kutub selatan
       const lastRingStart = 1 + (rings - 2) * segments;
       for (let i = 0; i < segments; i++) {
         const pointIndex = lastRingStart + i;
@@ -115,9 +117,9 @@
         new THREE.Float32BufferAttribute(radialPositions, 3)
       );
       const radialMaterial = new THREE.LineBasicMaterial({
-        color: 0x3498db, // Biru untuk garis radial/meridian
+        color: 0xffffff, // Warna putih
         transparent: true,
-        opacity: 0.5,
+        opacity: 0.7, // Sedikit lebih terang
         linewidth: 1,
       });
       const radialLines = new THREE.LineSegments(
@@ -126,11 +128,10 @@
       );
       scene.add(radialLines);
 
-      // Draw LATITUDE lines (lintang)
+      // Draw LATITUDE lines (lintang) - putih
       const latitudeGeometry = new THREE.BufferGeometry();
       const latitudePositions = [];
 
-      // Garis lintang untuk setiap ring (kecuali kutub)
       for (let j = 1; j < rings - 1; j++) {
         const ringStart = 1 + (j - 1) * segments;
         for (let i = 0; i < segments; i++) {
@@ -152,9 +153,9 @@
         new THREE.Float32BufferAttribute(latitudePositions, 3)
       );
       const latitudeMaterial = new THREE.LineBasicMaterial({
-        color: 0x3a6b3a, // Hijau untuk garis lintang
+        color: 0xffffff, // Warna putih
         transparent: true,
-        opacity: 0.3,
+        opacity: 0.5,
         linewidth: 1,
       });
       const latitudeLines = new THREE.LineSegments(
@@ -163,10 +164,10 @@
       );
       scene.add(latitudeLines);
 
-      // Add subtle glow effect
+      // Glow effect (ubah menjadi putih)
       const glowGeometry = new THREE.SphereGeometry(radius * 1.02, 32, 32);
       const glowMaterial = new THREE.MeshBasicMaterial({
-        color: 0x3498db,
+        color: 0xffffff, // Warna putih
         transparent: true,
         opacity: 0.05,
         side: THREE.BackSide,
@@ -177,7 +178,7 @@
       // Camera
       camera.position.z = 10;
 
-      // Animation - rotasi kanan-kiri (sumbu Y)
+      // Animation
       function animate() {
         requestAnimationFrame(animate);
         pointCloud.rotation.y += 0.002;
